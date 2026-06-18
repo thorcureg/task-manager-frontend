@@ -1,10 +1,11 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FaCheck } from 'react-icons/fa';
-import { BsThreeDots, BsTrash } from "react-icons/bs";
-import { useState } from "react";
+import { BsThreeDots, BsTrash, BsPencil  } from "react-icons/bs";
+import { useRef, useEffect, useState } from "react";
 import Modal from "./Modal";
 import TaskDetails from "./TaskDetails";
+import ToolTip from "./ToolTip";
 
 export default function TaskItem ({ 
     task, 
@@ -15,6 +16,16 @@ export default function TaskItem ({
     const [optionsOpen, setOptionsOpen] = useState(false);
     const [itemOptionsOpen, setItemOptionsOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [title, setTitle] = useState(task.title);
+    const inputRef = useRef(null);
+    
+    useEffect(()=> {
+        if(isEditing){
+            inputRef.current?.focus();
+            // inputRef.current?.select(); // Highlight the text when editing starts
+        }
+    }),[isEditing];
     const stopPropagation = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -73,16 +84,33 @@ export default function TaskItem ({
                         </FaCheck>
                     )
                 }
-                <div className="relative">
-                    <button 
-                        onPointerDown={stopPropagation}
-                        onClick={(e) => {
-                            stopPropagation(e);
-                            setItemOptionsOpen(!itemOptionsOpen);
-                        }}
-                    >
-                        <BsThreeDots  />
-                    </button>
+                <div className="relative 
+                    flex                    
+                    items-center
+                    gap-2
+                ">
+                    <ToolTip content="Edit Task">
+                        <button                       
+                            onClick={(e) => {
+                                stopPropagation(e);
+                                setIsEditing(true);
+                            }}
+                        >
+                            <BsPencil />
+                        </button>
+                    </ToolTip>
+
+                    <ToolTip content="Options">
+                        <button
+                            onPointerDown={stopPropagation}
+                            onClick={(e) => {
+                                stopPropagation(e);
+                                setItemOptionsOpen(!itemOptionsOpen);
+                            }}
+                        >
+                            <BsThreeDots />
+                        </button>
+                    </ToolTip>
 
                     {itemOptionsOpen && (
                         <div className="
@@ -106,6 +134,7 @@ export default function TaskItem ({
                                     gap-2
                                     text-left
                                     text-sm
+                                    hover:text-red-500
                                 "
                                 onPointerDown={stopPropagation}
                                 onClick={(e) => {
@@ -120,7 +149,36 @@ export default function TaskItem ({
                 </div>
             </div>
             <div>
-                {task.title}
+                {
+                    isEditing ? (                
+                    <input
+                        className="
+                            w-full
+                            bg-transparent
+                            border-none
+                            outline-none
+                        "
+                        ref={inputRef}
+                        value={title}
+                        readOnly={!isEditing}
+                        onChange={(e) => {
+                            if (isEditing) {
+                                setTitle(e.target.value);
+                            }
+                        }}
+                        onBlur={() => {
+                            if (isEditing) {
+                                setIsEditing(false);
+                                onUpdate(task.id, title, task.is_completed);
+                            }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    ):(
+                        <span>{title}</span>
+                    )
+                }
+
             </div>
 
         </div>
